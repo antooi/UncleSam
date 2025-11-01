@@ -15,7 +15,7 @@ exports.handler = async (event, context) => {
 
     // Securely retrieve the API key from environment variables.
     // **IMPORTANT**: You must set this variable in your Netlify UI settings (Build & Deploy -> Environment)
-    const OPENROUTER_API_KEY = process.env.AIunclesamAPIkey;
+    const OPENROUTER_API_KEY = process.env.AIunclesamPWD;
 
     if (!OPENROUTER_API_KEY) {
         console.error("OPENROUTER_API_KEY environment variable is not set.");
