@@ -1,0 +1,9 @@
+[build]
+# This tells Netlify which folder contains your public, deployable assets (e.g., index.html)
+publish = "." 
+
+[functions]
+# This points Netlify to your serverless code location
+directory = "netlify/functions"
+# Using esbuild is recommended for faster function bundling
+node_bundler = "esbuild"

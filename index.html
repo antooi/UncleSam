@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with AI</title>
+    <style>
+        /* ----------------------- */
+        /* 2. BASIC CSS STYLES     */
+        /* ----------------------- */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #chat-container {
+            width: 100%;
+            max-width: 600px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+        }
+
+        #chat-history {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            border-bottom: 1px solid #eee;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            max-width: 80%;
+        }
+
+        .user {
+            align-self: flex-end;
+            align-items: flex-end;
+        }
+
+        .bot {
+            align-self: flex-start;
+            align-items: flex-start;
+        }
+
+        .message-bubble {
+            padding: 10px 15px;
+            border-radius: 20px;
+            line-height: 1.4;
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+        }
+
+        .user .message-bubble {
+            background-color: #007bff;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .bot .message-bubble {
+            background-color: #e9ecef;
+            color: #333;
+            border-bottom-left-radius: 5px;
+        }
+
+        #input-area {
+            display: flex;
+            padding: 10px;
+        }
+
+        #user-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+
+        #send-button {
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        #send-button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div id="app" class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">Uncle Sam - your personal AI Coach</h1>
+            <p class="text-gray-600">Be gentle, I'm just a robot from Manhattan living in sunny Singapore, hehe</p>
+        </div>
+</body>        
+<body>
+    <div id="chat-container">
+        <div id="chat-history">
+            <div class="message bot">
+                <div class="message-bubble">Hello! I'm uncle Sam - your friendly but wise cabbie. Ask me anything.</div>
+            </div>
+        </div>
+
+        <div id="input-area">
+            <input type="text" id="user-input" placeholder="Type your message here..." autofocus>
+            <button id="send-button" onclick="handleSend()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatHistory = document.getElementById('chat-history');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const NETLIFY_FUNCTION_ENDPOINT = "/.netlify/functions/chatbot";
+
+        /**
+         * Adds a new message bubble to the chat history.
+         * @param {string} text - The message content.
+         * @param {string} sender - 'user' or 'bot'.
+         */
+        function displayMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.className = 'message-bubble';
+            bubbleDiv.textContent = text;
+            
+            messageDiv.appendChild(bubbleDiv);
+            chatHistory.appendChild(messageDiv);
+            
+            // Auto-scroll to the bottom of the chat history
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+        }
+
+        /**
+         * The secure function to call the Netlify Function.
+         */
+        async function sendPromptToBackend(prompt) {
+            try {
+                const response = await fetch(NETLIFY_FUNCTION_ENDPOINT, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    // Send the user prompt to the secure backend
+                    body: JSON.stringify({ userPrompt: prompt }),
+                });
+
+                if (!response.ok) {
+                    // Attempt to parse the error message from the function
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || `HTTP error! Status: ${response.status}`);
+                }
+
+                // Get the final, clean response from your secure function
+                const data = await response.json();
+                return data.message;
+
+            } catch (error) {
+                console.error("Error calling Netlify Function:", error);
+                // Return a user-friendly error message
+                return "Sorry, I ran into a server error. Please check the function logs.";
+            }
+        }
+
+        /**
+         * Manages the user interaction flow (Send button click or Enter key).
+         */
+        async function handleSend() {
+            const prompt = userInput.value.trim();
+            if (!prompt) return; // Ignore empty messages
+
+            // 1. Display user's message
+            displayMessage(prompt, 'user');
+            
+            // 2. Clear input and disable elements
+            userInput.value = '';
+            sendButton.disabled = true;
+            userInput.disabled = true;
+
+            // 3. Add a temporary 'thinking' message
+            const thinkingMessageText = 'Uncle Sam is thinking...';
+            displayMessage(thinkingMessageText, 'bot');
+            
+            // Find and store the temporary message element for later update
+            const temporaryBubble = chatHistory.lastChild.querySelector('.message-bubble');
+
+            // 4. Call the secure backend
+            const botReply = await sendPromptToBackend(prompt);
+
+            // 5. Update the UI with the final response
+            temporaryBubble.textContent = botReply;
+            
+            // 6. Re-enable input and button
+            sendButton.disabled = false;
+            userInput.disabled = false;
+            userInput.focus();
+        }
+
+        // Add support for the 'Enter' key
+        userInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault(); // Prevent form submission or newline
+                handleSend();
+            }
+        });
+
+    </script>
+</body>
+</html>
