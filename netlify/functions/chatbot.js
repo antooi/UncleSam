@@ -55,7 +55,7 @@ exports.handler = async (event, context) => {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                model: 'mistralai/mistral-7b-instruct-v0.2', // Example model, you can change this
+                model: 'meta-llama/llama-3.3-8b-instruct:free', // Example model, you can change this
                 messages: [
                     // System message to give the bot personality/context
                     { role: 'system', content: 'You are a friendly, concise, and helpful Netlify chat bot powered by OpenRouter. Respond briefly.' },
